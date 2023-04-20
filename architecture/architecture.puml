@@ -1,16 +1,33 @@
 @startuml
 ' Sensors
-package sensors {
-  rectangle "Plant Water Alarm" as plantwa
-  rectangle "Pump Water Alarm" as pumpwa
-  rectangle "Light Status" as ls
-  rectangle "Soil moisture" as sm
+package "RPI Pico" as rpico {
+  package sensors {
+    rectangle "Plant Water Alarm" as plantwa
+    rectangle "Pump Water Alarm" as pumpwa
+    rectangle "Light Status" as ls
+    rectangle "Soil moisture" as sm
+  }
+  ' Actuators 
+  rectangle "Pump" as pump
 }
-' Actuators 
-rectangle "Pump" as pump
 
-'Message bus
-rectangle "MQTT" as mqtt
+package ESP8266 {
+  ' Actuators
+  rectangle "Button" as but
+  rectangle "Lights" as lights
+}
+
+package RPi4 {
+
+  'Message bus
+  rectangle "MQTT" as mqtt
+
+
+
+  rectangle "InfluxDB" as influx
+  rectangle "Webserver" as web
+
+}
 
 
 'arrows
@@ -19,12 +36,14 @@ pumpwa --> mqtt : "publishes to"
 ls --> mqtt : "publishes to"
 sm --> mqtt : "publishes to"
 
-rectangle "InfluxDB" as influx
-rectangle "Webserver" as web
+mqtt --> influx : "read from"
+mqtt --> web : "read from"
 
-mqtt <-- influx : "read from"
-mqtt <-- web : "read from"
+web <-- influx : "read from"
 
-web --> influx : "read from"
+mqtt --> pump : "read from"
+mqtt --> lights : "read from"
+but --> mqtt : "publish"
+
 
 @enduml
