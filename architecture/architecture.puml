@@ -19,4 +19,12 @@ pumpwa --> mqtt : "publishes to"
 ls --> mqtt : "publishes to"
 sm --> mqtt : "publishes to"
 
+rectangle "InfluxDB" as influx
+rectangle "Webserver" as web
+
+mqtt <-- influx : "read from"
+mqtt <-- web : "read from"
+
+web --> influx : "read from"
+
 @enduml
