@@ -1,0 +1,22 @@
+@startuml
+' Sensors
+package sensors {
+  rectangle "Plant Water Alarm" as plantwa
+  rectangle "Pump Water Alarm" as pumpwa
+  rectangle "Light Status" as ls
+  rectangle "Soil moisture" as sm
+}
+' Actuators 
+rectangle "Pump" as pump
+
+'Message bus
+rectangle "MQTT" as mqtt
+
+
+'arrows
+plantwa --> mqtt : "publishes to"
+pumpwa --> mqtt : "publishes to"
+ls --> mqtt : "publishes to"
+sm --> mqtt : "publishes to"
+
+@enduml
