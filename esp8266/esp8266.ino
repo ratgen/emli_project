@@ -1,10 +1,3 @@
-// Embedded Linux (EMLI)
-// University of Southern Denmark
-// ESP8266 Wifi client - Webserver - User interface
-// Kjeld Jensen <kjen@sdu.dk> <kj@kjen.dk>
-// 2023-04-18, KJ, First version
-// inspired by https://docs.arduino.cc/tutorials/uno-wifi-rev2/uno-wifi-r2-hosting-a-webserver
-
 // LED
 #define PIN_LED_RED 14
 #define PIN_LED_YELLOW 13
@@ -21,22 +14,18 @@ volatile unsigned long count_prev_time;
 const char *WIFI_SSID = "EMLI_TEAM_13";
 const char *WIFI_PASSWORD = "embeddedlinux";
 
-// Static IP address
-IPAddress IPaddress(192, 168, 10, 222);
-IPAddress gateway(192, 168, 10, 1);
-IPAddress subnet(255, 255, 255, 0);
-// IPAddress primaryDNS(1, 1, 1, 1);
-// IPAddress secondaryDNS(8, 8, 8, 8);
+const char *mqtt_broker = "192.168.10.1";
+const int mqtt_port = 1883;
+const char *mqtt_username = "team13";
+const char *mqtt_password = "password";
 
-// Webserver
-#define CLIENT_TIMEOUT 2000
+bool pump_alarm = false;
+bool plant_alarm = false;
+int moisture = -1;
 
-WiFiServer server(80);
-WiFiClient client = server.available();
-unsigned long clientConnectTime = 0;
-String currentLine = "";
-char response_s[10];
-char s[25];
+#include <PubSubClient.h>
+WiFiClient espClient;
+PubSubClient mqttClient(espClient);
 
 ICACHE_RAM_ATTR void button_a_isr()
 {
@@ -47,11 +36,61 @@ ICACHE_RAM_ATTR void button_a_isr()
   }
 }
 
+void callback(char *topic, byte *payload, unsigned int length)
+{
+
+  Serial.print("Message arrived in topic \"");
+  Serial.print(topic);
+  Serial.print("\": \"");
+  String message;
+
+  for (int i = 0; i < length; i++)
+  {
+    Serial.print((char)payload[i]);
+    message += (char)payload[i];
+  }
+  Serial.println("\"");
+
+  if (strcmp(topic, "team13/sensors/pump_alarm") == 0)
+  {
+    pump_alarm = message == "1";
+  }
+  else if (strcmp(topic, "team13/sensors/plant_alarm") == 0)
+  {
+    plant_alarm = message == "1";
+  }
+  else if (strcmp(topic, "team13/sensors/moisture") == 0)
+  {
+    moisture = message.toInt();
+  }
+}
+
+void reconnect()
+{
+  while (!mqttClient.connected())
+  {
+    Serial.print("Connecting to MQTT broker...");
+    // Attempt to connect
+    if (mqttClient.connect("ESP8266", mqtt_username, mqtt_password))
+    {
+      Serial.println(" Connected!");
+      mqttClient.subscribe("team13/sensors/#");
+    }
+    else
+    {
+      Serial.print("Failed to connect to MQTT broker, rc=");
+      Serial.println(mqttClient.state());
+      delay(5000);
+    }
+  }
+}
+
 void setup()
 {
   // serial
   Serial.begin(115200);
-  delay(10);
+  while (!Serial)
+    ;
 
   // LEDs
   pinMode(LED_BUILTIN, OUTPUT);
@@ -69,10 +108,6 @@ void setup()
 
   // set the ESP8266 to be a WiFi-client
   WiFi.mode(WIFI_STA);
-
-  // configure static IP address
-  WiFi.config(IPaddress, gateway, subnet);
-  // WiFi.config(IPaddress, gateway, subnet, primaryDNS, secondaryDNS);
 
   // connect to Wifi access point
   Serial.println();
@@ -93,96 +128,19 @@ void setup()
   Serial.println(WiFi.localIP());
   Serial.println("");
 
-  // start webserver
-  Serial.println("Starting webserver");
-  Serial.println("");
-  server.begin();
+  mqttClient.setServer(mqtt_broker, mqtt_port);
+  mqttClient.setCallback(callback);
 }
 
 void loop()
 {
-  // test for newæ client
-  client = server.available();
-  if (client)
-  {
-    Serial.println("New client");
-    currentLine = "";
-    clientConnectTime = millis();
-    while (client.connected() && millis() - clientConnectTime < CLIENT_TIMEOUT)
-    {
-      if (client.available())
-      {
-        char c = client.read();
-        Serial.write(c);
+  reconnect();
 
-        if (c == '\n')
-        {
-          // if the current line is blank, you got two newline characters in a row.
-          // that's the end of the client HTTP request, so send a response:
-          if (currentLine.length() == 0)
-          {
-            Serial.println("Sending response");
-            client.println("HTTP/1.1 200 OK");
-            client.println("Content-type: text/html");
-            sprintf(s, "Content-Length: %d", strlen(response_s));
-            client.println(s);
-            client.println();
-            // client.println("Connection: close");
-            client.println(response_s);
-            client.println();
-            response_s[0] = 0;
-          }
-          else
-          {
+  bool alarming = pump_alarm || plant_alarm;
 
-            if (currentLine.startsWith("GET /led/red/on"))
-            {
-              Serial.println("Red LED on");
-              digitalWrite(PIN_LED_RED, HIGH);
-            }
-            else if (currentLine.startsWith("GET /led/red/off"))
-            {
-              Serial.println("Red LED off");
-              digitalWrite(PIN_LED_RED, LOW);
-            }
-            else if (currentLine.startsWith("GET /led/yellow/on"))
-            {
-              Serial.println("Yellow LED on");
-              digitalWrite(PIN_LED_YELLOW, HIGH);
-            }
-            else if (currentLine.startsWith("GET /led/yellow/off"))
-            {
-              Serial.println("Yellow LED off");
-              digitalWrite(PIN_LED_YELLOW, LOW);
-            }
-            else if (currentLine.startsWith("GET /led/green/on"))
-            {
-              Serial.println("Green LED on");
-              digitalWrite(PIN_LED_GREEN, HIGH);
-            }
-            else if (currentLine.startsWith("GET /led/green/off"))
-            {
-              Serial.println("Green LED off");
-              digitalWrite(PIN_LED_GREEN, LOW);
-            }
-            else if (currentLine.startsWith("GET /button/a/count"))
-            {
-              Serial.println("Return button count");
-              sprintf(response_s, "%d", button_a_count);
-              button_a_count = 0;
-            }
+  digitalWrite(PIN_LED_GREEN, !alarming);
+  digitalWrite(PIN_LED_RED, alarming);
+  digitalWrite(PIN_LED_YELLOW, moisture <= 20 && moisture != -1);
 
-            currentLine = "";
-          }
-        }
-        else if (c != '\r')
-        {
-          currentLine += c;
-        }
-      }
-    }
-    client.stop();
-    Serial.println("Client disconnected.");
-    Serial.println("");
-  }
+  mqttClient.loop();
 }
