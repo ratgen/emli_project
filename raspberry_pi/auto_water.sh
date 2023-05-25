@@ -8,5 +8,5 @@ for entry in "$search_dir"/*
 do
   filename=$(echo "$entry" | sed 's:.*/::')
   echo "Plant connected to Pico ${filename} needs water"
-  $(mosquitto_pub -h localhost -p 1883 -u team13 -P password -t team13/$filename/actuators/pump -m 1)
+  $(mosquitto_pub -h localhost -p 1883 -u team13 -P password -t team13/watering/$filename/actuators/pump -m 1)
 done
