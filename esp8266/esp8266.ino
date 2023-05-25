@@ -22,7 +22,7 @@ const char *mqtt_password = "password";
 
 bool pump_alarm = false;
 bool plant_alarm = false;
-int moisture = -1;
+bool needs_water = false;
 
 #include <PubSubClient.h>
 WiFiClient espClient;
@@ -65,9 +65,9 @@ void callback(char *topic, byte *payload, unsigned int length)
   {
     plant_alarm = message == "1";
   }
-  else if (String(topic).endsWith("moisture"))
+  else if (String(topic).endsWith("needs_water"))
   {
-    moisture = message.toInt();
+    needs_water = message == "1";
   }
 }
 
@@ -80,7 +80,7 @@ void reconnect()
     if (mqttClient.connect("ESP8266", mqtt_username, mqtt_password))
     {
       Serial.println(" Connected!");
-      mqttClient.subscribe("team13/1/sensors/#");
+      mqttClient.subscribe("team13/watering/e66118c4e34d3521/sensors/#");
     }
     else
     {
@@ -146,13 +146,13 @@ void loop()
 
   digitalWrite(PIN_LED_GREEN, !alarming);
   digitalWrite(PIN_LED_RED, alarming);
-  digitalWrite(PIN_LED_YELLOW, moisture <= 60 && moisture != -1);
+  digitalWrite(PIN_LED_YELLOW, needs_water);
 
   if (millis() - first_press_time >= 2000)
   {
     if (button_a_count == 1)
     {
-      mqttClient.publish("team13/1/actuators/pump", "1");
+      mqttClient.publish("team13/watering/e66118c4e34d3521/actuators/pump", "1");
     }
 
     button_a_count = 0;
