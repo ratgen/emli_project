@@ -1,5 +1,5 @@
 [Unit]
-Description=Read from plant
+Description=Network statistics monitoring
 After=network.target
 StartLimitIntervalSec=0
 
@@ -8,8 +8,7 @@ Type=simple
 Restart=always
 RestartSec=1
 User=pi
-ExecStart=/bin/bash /home/pi/documents/emli_project/raspberry_pi/pico_serial_input.sh
+ExecStart=/bin/bash /home/pi/documents/emli_project/raspberry_pi/network_statistics/stats.sh
 
 [Install]
 WantedBy=multi-user.target
-

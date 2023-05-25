@@ -1,6 +1,6 @@
 #!/bin/bash
 
-device="/dev/"$1
+device="/dev/pi_"$1
 
 stty -F $device 115200
 exec < $device
@@ -21,17 +21,23 @@ while true; do
     pump_alarm=0
   fi
 
-  if (( "${line[2]}" < "60" )) then
-    echo "less 60"
-  else
-    echo "more 60"
+  threshold=60
+
+  if [[ "${line[2]}" -ne " " ]] ; then
+    if [[ "${line[2]}" -lt "$threshold" ]] ; then
+      touch "/home/pi/needs_water/"$1 2> /dev/null
+      mosquitto_pub -h $host -p $port -u $username -P $password -t team13/watering/$1/sensors/needs_water -m "1"
+    else
+      rm "/home/pi/needs_water/"$1 2> /dev/null
+      mosquitto_pub -h $host -p $port -u $username -P $password -t team13/watering/$1/sensors/needs_water -m "0"
+    fi
   fi
 
 
   if [ ${#line[@]} != 0 ]; then
-    mosquitto_pub -h $host -p $port -u $username -P $password -t team13/sensors/plant_alarm -m ""${line[0]}
-    mosquitto_pub -h $host -p $port -u $username -P $password -t team13/sensors/pump_alarm -m ""$pump_alarm
-    mosquitto_pub -h $host -p $port -u $username -P $password -t team13/sensors/moisture -m ""${line[2]}
-    mosquitto_pub -h $host -p $port -u $username -P $password -t team13/sensors/light -m ""${line[3]}
+    mosquitto_pub -h $host -p $port -u $username -P $password -t team13/watering/$1/sensors/plant_alarm -m ""${line[0]}
+    mosquitto_pub -h $host -p $port -u $username -P $password -t team13/watering/$1/sensors/pump_alarm -m ""$pump_alarm
+    mosquitto_pub -h $host -p $port -u $username -P $password -t team13/watering/$1/sensors/moisture -m ""${line[2]}
+    mosquitto_pub -h $host -p $port -u $username -P $password -t team13/watering/$1/sensors/light -m ""${line[3]}
   fi
 done

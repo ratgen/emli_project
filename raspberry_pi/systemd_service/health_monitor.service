@@ -1,5 +1,5 @@
 [Unit]
-Description=Pump run Service
+Description=Health monitoring daemon
 After=network.target
 StartLimitIntervalSec=0
 
@@ -8,8 +8,7 @@ Type=simple
 Restart=always
 RestartSec=1
 User=pi
-ExecStart=/bin/bash /home/pi/documents/emli_project/raspberry_pi/pump_write.sh
+ExecStart=/bin/bash /home/pi/documents/emli_project/raspberry_pi/healh_publish.sh
 
 [Install]
 WantedBy=multi-user.target
-

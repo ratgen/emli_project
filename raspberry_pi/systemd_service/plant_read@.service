@@ -1,0 +1,15 @@
+[Unit]
+Description=Read from plant daemon
+After=network.target
+StartLimitIntervalSec=0
+StopWhenUnneeded=true
+
+[Service]
+Type=simple
+Restart=always
+RestartSec=1
+User=pi
+ExecStart=/bin/bash /home/pi/documents/emli_project/raspberry_pi/pico_serial_input.sh %i
+
+[Install]
+WantedBy=multi-user.target

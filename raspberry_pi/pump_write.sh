@@ -1,5 +1,7 @@
 #!/bin/bash
 
+id=$1
+
 host=localhost
 port=1883
 username=team13
@@ -26,7 +28,7 @@ do
   fi
 
   if [[ "$line" == *"pump 1"  ]] && [ $pump_alarm == 0 ] && [ $plant_alarm == 0 ]   ; then
-    echo p > /dev/ttyACM0
+    echo p > /dev/pi_$id
   fi
 
-done 10< <(mosquitto_sub -v -h $host -p $port -u $username -P $password -t team13/actuators/pump -t team13/sensors/pump_alarm -t team13/sensors/plant_alarm ) 
+done 10< <(mosquitto_sub -v -h $host -p $port -u $username -P $password -t team13/watering/$id/actuators/pump -t team13/watering/$id/sensors/pump_alarm -t team13/watering/$id/sensors/plant_alarm ) 
