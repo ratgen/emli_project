@@ -80,7 +80,7 @@ void reconnect()
     if (mqttClient.connect("ESP8266", mqtt_username, mqtt_password))
     {
       Serial.println(" Connected!");
-      mqttClient.subscribe("team13/1/sensors/#");
+      mqttClient.subscribe("team13/watering/e66118c4e34d3521/sensors/#");
     }
     else
     {
@@ -152,7 +152,7 @@ void loop()
   {
     if (button_a_count == 1)
     {
-      mqttClient.publish("team13/1/actuators/pump", "1");
+      mqttClient.publish("team13/watering/e66118c4e34d3521/actuators/pump", "1");
     }
 
     button_a_count = 0;
