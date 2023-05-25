@@ -1,0 +1,4 @@
+# Run every pump once every 12 hours
+0 */12 * * * ./auto_water_12_hour.sh
+# Run every pump once an hour if it needs water
+0 * * * * ./auto_water.sh
