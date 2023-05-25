@@ -1,7 +1,9 @@
 #!/bin/bash
 
-stty -F /dev/ttyACM0 115200
-exec < /dev/ttyACM0
+device="/dev/"$1
+
+stty -F $device 115200
+exec < $device
 
 host=localhost
 port=1883
@@ -18,6 +20,13 @@ while true; do
   else
     pump_alarm=0
   fi
+
+  if (( "${line[2]}" < "60" )) then
+    echo "less 60"
+  else
+    echo "more 60"
+  fi
+
 
   if [ ${#line[@]} != 0 ]; then
     mosquitto_pub -h $host -p $port -u $username -P $password -t team13/sensors/plant_alarm -m ""${line[0]}
