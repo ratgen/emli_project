@@ -8,6 +8,7 @@
 #define DEBOUNCE_TIME 200 // milliseconds
 volatile int button_a_count;
 volatile unsigned long count_prev_time;
+volatile unsigned long first_press_time;
 
 // Wifi
 #include <ESP8266WiFi.h>
@@ -34,6 +35,11 @@ ICACHE_RAM_ATTR void button_a_isr()
     count_prev_time = millis();
     button_a_count++;
   }
+
+  if (button_a_count == 1)
+  {
+    first_press_time = count_prev_time;
+  }
 }
 
 void callback(char *topic, byte *payload, unsigned int length)
@@ -51,15 +57,15 @@ void callback(char *topic, byte *payload, unsigned int length)
   }
   Serial.println("\"");
 
-  if (strcmp(topic, "team13/sensors/pump_alarm") == 0)
+  if (String(topic).endsWith("pump_alarm"))
   {
     pump_alarm = message == "1";
   }
-  else if (strcmp(topic, "team13/sensors/plant_alarm") == 0)
+  else if (String(topic).endsWith("plant_alarm"))
   {
     plant_alarm = message == "1";
   }
-  else if (strcmp(topic, "team13/sensors/moisture") == 0)
+  else if (String(topic).endsWith("moisture"))
   {
     moisture = message.toInt();
   }
@@ -74,7 +80,7 @@ void reconnect()
     if (mqttClient.connect("ESP8266", mqtt_username, mqtt_password))
     {
       Serial.println(" Connected!");
-      mqttClient.subscribe("team13/sensors/#");
+      mqttClient.subscribe("team13/1/sensors/#");
     }
     else
     {
@@ -140,7 +146,18 @@ void loop()
 
   digitalWrite(PIN_LED_GREEN, !alarming);
   digitalWrite(PIN_LED_RED, alarming);
-  digitalWrite(PIN_LED_YELLOW, moisture <= 20 && moisture != -1);
+  digitalWrite(PIN_LED_YELLOW, moisture <= 60 && moisture != -1);
+
+  if (millis() - first_press_time >= 2000)
+  {
+    if (button_a_count == 1)
+    {
+      mqttClient.publish("team13/1/actuators/pump", "1");
+    }
+
+    button_a_count = 0;
+    first_press_time = 0;
+  }
 
   mqttClient.loop();
 }
