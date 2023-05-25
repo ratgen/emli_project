@@ -1,0 +1,15 @@
+[Unit]
+Description=Pump run Service
+After=network.target
+StartLimitIntervalSec=0
+
+[Service]
+Type=simple
+Restart=always
+RestartSec=1
+User=pi
+ExecStart=/bin/bash /home/pi/documents/emli_project/raspberry_pi/pump_write.sh
+
+[Install]
+WantedBy=multi-user.target
+
