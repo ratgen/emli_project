@@ -1,0 +1,21 @@
+@startuml
+
+object "Raspberry Pi" as rpi {
+  +visualisation
+  +message-passing
+  +application logic
+}
+
+object "ESP8266 (remote)" as remote {
+  +button
+  +system status
+}
+
+object "Raspberry Pi Pico" as sensors {
+  +sensors
+}
+
+rpi "1" -- "1"  remote
+rpi "1" -up-> "1..*" sensors :  reads from and writes to
+
+@enduml
