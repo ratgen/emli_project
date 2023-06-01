@@ -1,1 +1,1 @@
-SUBSYSTEM=="tty", ATTRS{idVendor}=="2e8a", ATTRS{idProduct}=="0005", MODE="0666", SYMLINK+="pi_$env{ID_SERIAL_SHORT}", TAG+="systemd", ENV{SYSTEMD_WANTS}+="plant_read@$env{ID_SERIAL_SHORT}.service", ENV{SYSTEMD_WANTS}+="pump_run@$env{ID_SERIAL_SHORT}.service"
+SUBSYSTEM=="tty", ATTRS{idVendor}=="2e8a", ATTRS{idProduct}=="0005", MODE="0666", SYMLINK+="pi_$env{ID_SERIAL_SHORT}", ENV{SYSTEMD_WANTS}+="plant_read@$env{ID_SERIAL_SHORT}.service", ENV{SYSTEMD_WANTS}+="pump_run@$env{ID_SERIAL_SHORT}.service"
