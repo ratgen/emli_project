@@ -1,0 +1,14 @@
+[Unit]
+Description=Publish the status of the plant
+After=network.target
+StartLimitIntervalSec=0
+
+[Service]
+Type=simple
+Restart=always
+RestartSec=1
+User=pi
+ExecStart=/bin/bash /home/pi/documents/emli_project/esp8266/signalling.sh 192.168.10.222 e66118c4e34d3521
+
+[Install]
+WantedBy=multi-user.target
